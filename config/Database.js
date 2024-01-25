@@ -6,4 +6,4 @@ const db = new Sequelize('cad_db', 'root', '', {
     logging: console.log,
   });  
 
-export default db;
+export default db; 

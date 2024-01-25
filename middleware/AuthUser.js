@@ -1,7 +1,7 @@
-import User from "../models/UsersModel.js";
+import Admin from "../models/AdminModel.js";
 import jwt from "jsonwebtoken";
 
-export const verifyUser = async (req, res, next) => {
+export const verifyAdmin = async (req, res, next) => {
   const token = req.headers.authorization?.split(' ')[1];
 
   if (!token) {
@@ -15,13 +15,12 @@ export const verifyUser = async (req, res, next) => {
     }
 
     try {
-      const user = await User.findOne({ where: { id: decodedToken.userId } });
-      if (!user) {
-        return res.status(404).json({ msg: 'User tidak ditemukan' });
+      const admin = await Admin.findOne({ where: { id: decodedToken.adminId } });
+      if (!admin) {
+        return res.status(404).json({ msg: 'admin tidak ditemukan' });
       }
 
-      req.userId = user.id;
-      req.role = user.role;
+      req.adminId = admin.id;
 
       next();
     } catch (error) {
