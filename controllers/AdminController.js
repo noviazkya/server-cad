@@ -34,7 +34,7 @@ export const createAdmin = async (req, res) => {
   if (password !== confPassword) {
     return res
       .status(400)
-      .json({ msg: "password dan konfirmasi password tidak cocok" });
+      .json({ msg: "password and confirm password do not match" });
   }
 
   try {
@@ -43,7 +43,7 @@ export const createAdmin = async (req, res) => {
       email: email,
       password: hashPassword,
     });
-    res.status(201).json({ msg: "register berhasil" });
+    res.status(201).json({ msg: "registration was successful" });
   } catch (error) {
     res.status(400).json({ msg: error.message });
   }
@@ -62,7 +62,7 @@ export const updateAdmin = async (req, res) => {
   if (password !== confPassword) {
     return res
       .status(400)
-      .json({ msg: "password dan konfirmasi password tidak cocok" });
+      .json({ msg: "password and confirm password do not match" });
   }
   try {
     await Admin.update(
@@ -77,7 +77,7 @@ export const updateAdmin = async (req, res) => {
         },
       }
     );
-    res.status(201).json({ msg: "update admin berhasil" });
+    res.status(201).json({ msg: "admin update successful" });
   } catch (error) {
     res.status(400).json({ msg: error.message });
   }

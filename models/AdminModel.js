@@ -3,7 +3,7 @@ import db from "../config/Database.js";
 
 const { DataTypes } = Sequelize;
 
-const Admin= db.define(
+const Admin = db.define(
   "admin",
   {
     uuid: {
@@ -47,4 +47,4 @@ const Admin= db.define(
   }
 );
 
-export default Admin;
+export default Admin; 

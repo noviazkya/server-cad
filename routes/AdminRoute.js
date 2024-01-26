@@ -1,10 +1,10 @@
 import express from "express";
 import {
-    getAdmin,
-    getAdminById,
-    createAdmin,
-    updateAdmin,
-    deleteAdmin
+  getAdmin,
+  getAdminById,
+  createAdmin,
+  updateAdmin,
+  deleteAdmin,
 } from "../controllers/AdminController.js";
 import { verifyAdmin } from "../middleware/AuthUser.js";
 
@@ -15,4 +15,4 @@ router.post("/admin/create", createAdmin);
 router.patch("/admin/update/:uuid", verifyAdmin, updateAdmin);
 router.delete("/admin/delete/:uuid", verifyAdmin, deleteAdmin);
 
-export default router;
+export default router;  

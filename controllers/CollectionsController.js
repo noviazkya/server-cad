@@ -30,7 +30,7 @@ export const createCollection = async (req, res) => {
   const { title, creator, date, description } = req.body;
   try {
     if (req.files === null)
-      return res.status(400).json({ msg: "No File Uploaded" });
+      return res.status(400).json({ msg: "no file uploaded" });
     const file = req.files.file;
     const fileSize = file.data.length;
     const ext = path.extname(file.name);
@@ -39,9 +39,9 @@ export const createCollection = async (req, res) => {
     const allowedType = [".png", ".jpg", "jpeg"];
 
     if (!allowedType.includes(ext.toLocaleLowerCase()))
-      return res.status(422).json({ msg: "Invalid Image" });
+      return res.status(422).json({ msg: "invalid image" });
     if (fileSize > 5000000)
-      return res.status(422).json({ msg: "Image must be less than 5MB" });
+      return res.status(422).json({ msg: "image must be less than 5MB" });
 
     file.mv(`./public/images/${fileName}`, async (err) => {
       if (err) return res.status(500).json({ msg: err.message });
@@ -71,7 +71,7 @@ export const updateCollection = async (req, res) => {
       uuid: req.params.uuid,
     },
   });
-  if (!collection) return res.status(404).json({ msg: "Data not found" });
+  if (!collection) return res.status(404).json({ msg: "data not found" });
 
   let fileName = "";
 
@@ -86,9 +86,9 @@ export const updateCollection = async (req, res) => {
     const allowedType = [".png", ".jpg", ".jpeg"];
 
     if (!allowedType.includes(ext.toLowerCase()))
-      return res.status(422).json({ msg: "Invalid image" });
+      return res.status(422).json({ msg: "invalid image" });
     if (fileSize > 5000000)
-      return res.status(422).json({ msg: "Images must be less than 5MB" });
+      return res.status(422).json({ msg: "images must be less than 5MB" });
 
     const filepath = `./public/images/${collection.image}`;
 
@@ -126,7 +126,7 @@ export const updateCollection = async (req, res) => {
       }
     );
     res.status(200).json({
-      message: "Collection Updated",
+      message: "collection updated",
     });
   } catch (error) {
     res.status(501).json({ msg: error.message });
@@ -138,9 +138,9 @@ export const deleteCollection = async (req, res) => {
   const collection = await Collection.findOne({
     where: {
       uuid: req.params.uuid,
-    },
+    },            
   });
-  if (!collection) return res.status(404).json({ msg: "Data not found" });
+  if (!collection) return res.status(404).json({ msg: "data not found" });
   try {
     await Collection.destroy({
       where: {
@@ -155,7 +155,7 @@ export const deleteCollection = async (req, res) => {
     fs.unlinkSync(imagePath);
 
     res.status(201).json({
-      message: "Collection Updated",
+      message: "collection updated",
     });
   } catch (error) {
     res.status(501).json({ msg: error.message });
