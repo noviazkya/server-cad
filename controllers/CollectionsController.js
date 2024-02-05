@@ -126,7 +126,7 @@ export const updateCollection = async (req, res) => {
       }
     );
     res.status(200).json({
-      message: "collection updated",
+      message: "collection updated", 
     });
   } catch (error) {
     res.status(501).json({ msg: error.message });
@@ -140,7 +140,9 @@ export const deleteCollection = async (req, res) => {
       uuid: req.params.uuid,
     },            
   });
+
   if (!collection) return res.status(404).json({ msg: "data not found" });
+  
   try {
     await Collection.destroy({
       where: {
@@ -148,15 +150,20 @@ export const deleteCollection = async (req, res) => {
       },
     });
 
-    const imagePath = path.join(
-      __dirname,
-      `../public/images/${collection.image}`
-    );
-    fs.unlinkSync(imagePath);
+    const __dirname = path.dirname(new URL(import.meta.url).pathname);
+    const imagePath = path.join(__dirname, `../public/images/${collection.image}`);
 
-    res.status(201).json({
-      message: "collection updated",
-    });
+    // Periksa apakah file ada sebelum mencoba menghapusnya
+    if (fs.existsSync(imagePath)) {
+      fs.unlinkSync(imagePath);
+      res.status(201).json({
+        message: "collection updated",
+      });
+    } else {
+      res.status(404).json({
+        message: "image not found",
+      });
+    }
   } catch (error) {
     res.status(501).json({ msg: error.message });
     console.log(error.message);
