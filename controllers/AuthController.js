@@ -39,7 +39,7 @@ export const Login = async (req, res) => {
     admin.refreshToken = refreshToken;
     await admin.save();
 
-    res.json({ accessToken, refreshToken, role });
+    res.json({ success: true , accessToken });
   } catch (error) {
     res.status(500).json({ msg: error.message });
     console.log(error);

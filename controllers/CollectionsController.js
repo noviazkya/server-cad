@@ -31,7 +31,7 @@ export const createCollection = async (req, res) => {
   try {
     if (req.files === null)
       return res.status(400).json({ msg: "no file uploaded" });
-    const file = req.files.file;
+    const file = req.files.inputFile;
     const fileSize = file.data.length;
     const ext = path.extname(file.name);
     const fileName = file.md5 + ext;
@@ -78,7 +78,7 @@ export const updateCollection = async (req, res) => {
   if (req.files === null) {
     fileName = collection.image;
   } else {
-    const file = req.files.file;
+    const file = req.files.inputFile;
     const fileSize = file.data.length;
     const ext = path.extname(file.name);
     fileName = file.md5 + ext;

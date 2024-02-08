@@ -7,7 +7,7 @@ const { DataTypes } = Sequelize;
 const Information_tags = db.define(
   "information_tags",
   {
-    InformationId: {
+    informationId: {
       type: DataTypes.INTEGER,
       allowNull: false,
       validate: {
@@ -26,5 +26,6 @@ const Information_tags = db.define(
 
 Information.hasMany(Information_tags);
 Information_tags.belongsTo(Information, { foreignKey: "informationId" });
+
 
 export default Information_tags;
