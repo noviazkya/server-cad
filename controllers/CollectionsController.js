@@ -1,6 +1,10 @@
 import Collection from "../models/CollectionsModel.js";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 export const getCollection = async (req, res) => {
   try {
@@ -135,37 +139,38 @@ export const updateCollection = async (req, res) => {
 };
 
 export const deleteCollection = async (req, res) => {
-  const collection = await Collection.findOne({
-    where: {
-      uuid: req.params.uuid,
-    },            
-  });
-
-  if (!collection) return res.status(404).json({ msg: "data not found" });
-  
   try {
+    const collection = await Collection.findOne({
+      where: {
+        uuid: req.params.uuid,
+      },
+    });
+
+    if (!collection) return res.status(404).json({ msg: "Data not found" });
+      // Delete the existing file
+      const filepath = path.join(__dirname, '../public/images', collection.image);
+      if (fs.existsSync(filepath)) {
+        try {
+          fs.unlinkSync(filepath);
+          console.log(`File ${filepath} successfully deleted`);
+        } catch (err) {
+          console.error(`Failed to delete file ${filepath}: ${err}`);
+        }
+      } else {
+        console.warn(`File ${filepath} not found`);
+      }
+
+    // Hapus koleksi dari database
     await Collection.destroy({
       where: {
         id: collection.id,
       },
     });
 
-    const __dirname = path.dirname(new URL(import.meta.url).pathname);
-    const imagePath = path.join(__dirname, `../public/images/${collection.image}`);
-
-    // Periksa apakah file ada sebelum mencoba menghapusnya
-    if (fs.existsSync(imagePath)) {
-      fs.unlinkSync(imagePath);
-      res.status(201).json({
-        message: "collection updated",
-      });
-    } else {
-      res.status(404).json({
-        message: "image not found",
-      });
-    }
+    res.status(200).json({ msg: "Collection deleted successfully" });
   } catch (error) {
-    res.status(501).json({ msg: error.message });
-    console.log(error.message);
+    console.error("Error deleting collection:", error);
+    res.status(500).json({ msg: "Internal server error" });
   }
 };
+
