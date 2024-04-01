@@ -12,7 +12,7 @@ const router = express.Router();
 router.get("/collections", getCollection);
 router.get("/collections/:uuid", getCollectionById);
 router.post("/collections/create", verifyAdmin, createCollection);
-router.put("/collections/update/:uuid", verifyAdmin, updateCollection);
+router.patch("/collections/update/:uuid", verifyAdmin, updateCollection);
 router.delete("/collections/delete/:uuid", verifyAdmin, deleteCollection);
 
 export default router;

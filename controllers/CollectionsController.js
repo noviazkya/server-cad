@@ -70,67 +70,75 @@ export const createCollection = async (req, res) => {
 };
 
 export const updateCollection = async (req, res) => {
-  const collection = await Collection.findOne({
-    where: {
-      uuid: req.params.uuid,
-    },
-  });
-  if (!collection) return res.status(404).json({ msg: "data not found" });
-
-  let fileName = "";
-
-  if (req.files === null) {
-    fileName = collection.image;
-  } else {
-    const file = req.files.inputFile;
-    const fileSize = file.data.length;
-    const ext = path.extname(file.name);
-    fileName = file.md5 + ext;
-
-    const allowedType = [".png", ".jpg", ".jpeg"];
-
-    if (!allowedType.includes(ext.toLowerCase()))
-      return res.status(422).json({ msg: "invalid image" });
-    if (fileSize > 5000000)
-      return res.status(422).json({ msg: "images must be less than 5MB" });
-
-    const filepath = `./public/images/${collection.image}`;
-
-    if (fs.existsSync(filepath)) {
-      try {
-        fs.unlinkSync(filepath);
-        console.log(`File ${filepath} successfully deleted`);
-      } catch (err) {
-        console.error(`Failed to delete file ${filepath}: ${err}`);
-      }
-    } else {
-      console.warn(`File ${filepath} not found`);
+  try {
+    const collection = await Collection.findOne({
+      where: {
+        uuid: req.params.uuid,
+      },
+    });
+    
+    if (!collection) {
+      return res.status(404).json({ msg: "Data not found" });
     }
 
-    file.mv(`./public/images/${fileName}`, (err) => {
-      if (err) return res.status(500).json({ msg: err.message });
-    });
-  }
-  const { title, creator, date, description } = req.body;
+    let fileName = collection.image;
 
-  try {
-    await Collection.update(
-      {
-        title: title,
-        creator: creator,
-        date: date,
-        description: description,
-        image: fileName,
-        url: `${req.protocol}://${req.get("host")}/images/${fileName}`,
-      },
-      {
-        where: {
-          id: collection.id,
-        },
+    if (req.files && req.files.inputFile) {
+      const file = req.files.inputFile;
+      const fileSize = file.data.length;
+      const ext = path.extname(file.name);
+      fileName = `${file.md5}${ext}`;
+
+      const allowedType = [".png", ".jpg", ".jpeg"];
+
+      if (!allowedType.includes(ext.toLowerCase())) {
+        return res.status(422).json({ msg: "Invalid image" });
       }
-    );
+
+      if (fileSize > 2000000) {
+        return res.status(422).json({ msg: "Images must be less than 2MB" });
+      }
+
+      const uploadPath = path.join(__dirname, "../public/images", fileName);
+
+      // Ensure the directory exists
+      if (!fs.existsSync(path.join(__dirname, "../public/images"))) {
+        fs.mkdirSync(path.join(__dirname, "../public/images"));
+      }
+
+      // Move the new file
+      await file.mv(uploadPath);
+
+      // Delete the existing file only if it's different from the new one
+      if (fileName !== collection.image) {
+        const filepath = path.join(__dirname, "../public/images", collection.image);
+        if (fs.existsSync(filepath)) {
+          try {
+            fs.unlinkSync(filepath);
+            console.log(`File ${filepath} successfully deleted`);
+          } catch (err) {
+            console.error(`Failed to delete file ${filepath}: ${err}`);
+          }
+        } else {
+          console.warn(`File ${filepath} not found`);
+        }
+      }
+    }
+
+    const { title, creator, date, description } = req.body;
+
+    // Update collection
+    await collection.update({
+      title: title,
+      creator: creator,
+      date: date,
+      description: description,
+      image: fileName,
+      url: `${req.protocol}://${req.get("host")}/images/${fileName}`,
+    });
+
     res.status(200).json({
-      message: "collection updated", 
+      message: "Collection updated", 
     });
   } catch (error) {
     res.status(501).json({ msg: error.message });
