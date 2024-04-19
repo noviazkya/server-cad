@@ -15,7 +15,7 @@ const Information_tags = db.define(
       },
     },
     tags: {
-      type: DataTypes.STRING,
+      type: DataTypes.JSON,
       allowNull: false,
     },
   },
@@ -26,6 +26,5 @@ const Information_tags = db.define(
 
 Information.hasMany(Information_tags);
 Information_tags.belongsTo(Information, { foreignKey: "informationId" });
-
 
 export default Information_tags;

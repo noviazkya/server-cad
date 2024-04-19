@@ -2,6 +2,8 @@ import Information from "../models/InformationModel.js";
 import Information_tags from "../models/Information_tagsModel.js";
 import fs from "fs";
 import path from "path";
+import { Op } from "sequelize";
+
 
 export const getInformation = async (req, res) => {
   try {
@@ -9,7 +11,7 @@ export const getInformation = async (req, res) => {
       include: [
         {
           model: Information_tags,
-          attributes:[ "id","tags"]
+          attributes: ["id", "tags"],
         },
       ],
     });
@@ -28,7 +30,7 @@ export const getInformationById = async (req, res) => {
       include: [
         {
           model: Information_tags,
-          attributes:[ "id","tags"]
+          attributes: ["id", "tags"],
         },
       ],
     });
@@ -39,8 +41,7 @@ export const getInformationById = async (req, res) => {
 };
 
 export const createInformation = async (req, res) => {
-  const { title, opening, category, date, description, address, tags } =
-    req.body;
+  const { title, opening, category, date, description, address, tags } = req.body;
 
   try {
     if (!req.files || !req.files.inputFile) {
@@ -62,7 +63,13 @@ export const createInformation = async (req, res) => {
       return res.status(422).json({ msg: "Image must be less than 5MB" });
     }
 
-    file.mv(`../public/images/${fileName}`, async (err) => {
+    // Pengecekan apakah file dengan nama yang sama sudah ada di server
+    const imagePath = `../public/images/${fileName}`;
+    if (fs.existsSync(imagePath)) {
+      return res.status(409).json({ msg: "File with the same name already exists" });
+    }
+
+    file.mv(imagePath, async (err) => {
       if (err) return res.status(500).json({ msg: err.message });
     });
 
@@ -89,6 +96,7 @@ export const createInformation = async (req, res) => {
     console.error(error.message);
   }
 };
+
 
 export const updateInformation = async (req, res) => {
   const information = await Information.findOne({
@@ -142,7 +150,7 @@ export const updateInformation = async (req, res) => {
     });
   }
 
-  const { title, opening, category, date, description, address } = req.body;
+  const { title, opening, category, date, description, address, tags } = req.body;
 
   try {
     await Information.update(
@@ -163,6 +171,9 @@ export const updateInformation = async (req, res) => {
       }
     );
 
+    // Update tags
+    await updateInformationTags(information.id, tags);
+
     res.status(201).json({
       message: `Information ${information.title} has been updated`,
     });
@@ -177,29 +188,35 @@ export const deleteInformation = async (req, res) => {
     const { uuid } = req.params;
 
     const information = await Information.findOne({
-      where: {
-        uuid: uuid,
-      },
-      include: [Information_tags], // Sertakan relasi dengan Information_tags
+      where: { uuid },
+      include: [Information_tags], // Include relation with Information_tags
     });
 
     if (!information) {
       return res.status(404).json({ msg: "Information not found" });
     }
 
-    // Panggil fungsi untuk menghapus semua tags
+    // Delete all tags
     await deleteInformationTags(information.id);
 
-    // Hapus file gambar
-    const imagePath = `../public/images/${information.image}`;
-    if (fs.existsSync(imagePath)) {
-      fs.unlinkSync(imagePath);
-      console.log(`File ${imagePath} successfully deleted`);
-    } else {
-      console.warn(`File ${imagePath} not found`);
+    // Check if the image is used by other information
+    const otherInformationUsingImage = await Information.findOne({
+      where: { image: information.image, uuid: { [Op.not]: uuid } }, // Check if other information uses the same image
+    });
+
+    // Delete information record only if the image is not used by other information
+    if (!otherInformationUsingImage) {
+      // Delete image file
+      const imagePath = `../public/images/${information.image}`;
+      if (fs.existsSync(imagePath)) {
+        fs.unlinkSync(imagePath);
+        console.log(`File ${imagePath} successfully deleted`);
+      } else {
+        console.warn(`File ${imagePath} not found`);
+      }
     }
 
-    // Hapus record informasi
+    // Delete information record
     await information.destroy();
 
     res.status(200).json({ msg: "Information and tags deleted successfully" });
@@ -222,76 +239,17 @@ const createInformationTags = async (informationId, tags) => {
   }
 };
 
-export const addTagsForInformation = async (req, res) => {
+const updateInformationTags = async (informationId, tags) => {
   try {
-    const { uuid } = req.params;
-    const { tags } = req.body;
-
-    const information = await Information.findOne({
-      where: { uuid },
-    });
-
-    if (!information) {
-      return res.status(404).json({ msg: "Information not found" });
-    }
-
-    // Panggil fungsi untuk menambahkan tags baru
-    await createInformationTags(information.id, tags);
-
-    res.status(200).json({ msg: "Tags added successfully" });
+    // Delete existing tags
+    await deleteInformationTags(informationId);
+    // Create new tags
+    await createInformationTags(informationId, tags);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ msg: error.message });
+    throw error;
   }
 };
-
-export const updateTagsForInformation = async (req, res) => {
-  const { uuid } = req.params;
-  const { tags } = req.body;
-
-  try {
-    const information = await Information.findOne({
-      where: { uuid },
-    });
-
-    if (!information) {
-      return res.status(404).json({ msg: "Information not found" });
-    }
-
-    // Panggil fungsi untuk menghapus semua tags sebelum menambahkan yang baru
-    await deleteInformationTags(information.id);
-
-    // Panggil fungsi untuk menambahkan tags baru
-    await createInformationTags(information.id, tags);
-
-    // Pastikan objek res didefinisikan sebelum mencoba mengakses status
-    res.status(200).json({ msg: "Tags updated successfully" });
-  } catch (error) {
-    console.error(error);
-    // Pastikan objek res didefinisikan sebelum mencoba mengakses status
-    res.status(500).json({ msg: error.message });
-  }
-};
-
-export const deleteTagsForInformation = async (req, res) => {
-  try {
-    const information = await Information.findOne({
-      where: { uuid: req.params.uuid },
-    });
-
-    if (!information) {
-      return res.status(404).json({ msg: 'Information not found' });
-    }
-
-    // Panggil fungsi untuk menghapus semua tags
-    await deleteInformationTags(information.id);
-
-    res.status(200).json({ msg: 'Tags deleted successfully' });
-  } catch (error) {
-    res.status(500).json({ msg: error.message });
-  }
-};
-
 
 const deleteInformationTags = async (informationId) => {
   try {
