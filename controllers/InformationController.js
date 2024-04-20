@@ -3,6 +3,10 @@ import Information_tags from "../models/Information_tagsModel.js";
 import fs from "fs";
 import path from "path";
 import { Op } from "sequelize";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 
 export const getInformation = async (req, res) => {
@@ -63,33 +67,42 @@ export const createInformation = async (req, res) => {
       return res.status(422).json({ msg: "Image must be less than 5MB" });
     }
 
+    const uploadDir = path.join(__dirname, '../public/images');
+
+    // Ensure the directory exists
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+
     // Pengecekan apakah file dengan nama yang sama sudah ada di server
-    const imagePath = `../public/images/${fileName}`;
+    const imagePath = path.join(uploadDir, fileName);
     if (fs.existsSync(imagePath)) {
       return res.status(409).json({ msg: "File with the same name already exists" });
     }
 
     file.mv(imagePath, async (err) => {
-      if (err) return res.status(500).json({ msg: err.message });
-    });
+      if (err) {
+        return res.status(500).json({ msg: err.message });
+      }
 
-    const newInformation = await Information.create({
-      title: title,
-      opening: opening,
-      category: category,
-      date: date,
-      description: description,
-      address: address,
-      image: fileName,
-      url: url,
-    });
+      const newInformation = await Information.create({
+        title: title,
+        opening: opening,
+        category: category,
+        date: date,
+        description: description,
+        address: address,
+        image: fileName,
+        url: url,
+      });
 
-    // Tambahkan tags baru
-    await createInformationTags(newInformation.id, tags);
+      // Tambahkan tags baru
+      await createInformationTags(newInformation.id, tags);
 
-    res.status(201).json({
-      message: "Information has been created",
-      information: newInformation,
+      res.status(201).json({
+        message: "Information has been created",
+        information: newInformation,
+      });
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -129,25 +142,31 @@ export const updateInformation = async (req, res) => {
       return res.status(422).json({ msg: "Image must be less than 2MB" });
     }
 
-    const filepath = `../public/images/${information.image}`;
 
-    if (fs.existsSync(filepath)) {
-      try {
-        fs.unlinkSync(filepath);
-        console.log(`File ${filepath} successfully deleted`);
-      } catch (err) {
-        console.error(`Failed to delete file ${filepath}: ${err}`);
-      }
-    } else {
-      console.warn(`File ${filepath} not found`);
+    const uploadPath = path.join(__dirname, "../public/images", fileName);
+
+    // Ensure the directory exists
+    if (!fs.existsSync(path.join(__dirname, "../public/images"))) {
+      fs.mkdirSync(path.join(__dirname, "../public/images"));
     }
 
-    file.mv(`../public/images/${fileName}`, (err) => {
-      if (err) {
-        console.error(`Error moving file: ${err}`);
-        return res.status(500).json({ msg: "Error moving file" });
+    // Move the new file
+    await file.mv(uploadPath);
+
+    // Delete the existing file only if it's different from the new one
+    if (fileName !== information.image) {
+      const filepath = path.join(__dirname, "../public/images", information.image);
+      if (fs.existsSync(filepath)) {
+        try {
+          fs.unlinkSync(filepath);
+          console.log(`File ${filepath} successfully deleted`);
+        } catch (err) {
+          console.error(`Failed to delete file ${filepath}: ${err}`);
+        }
+      } else {
+        console.warn(`File ${filepath} not found`);
       }
-    });
+    }
   }
 
   const { title, opening, category, date, description, address, tags } = req.body;
