@@ -10,7 +10,7 @@ export const getCollection = async (req, res) => {
   try {
     const response = await Collection.findAll();
     res.status(200).json(response);
-  } catch (error) {
+  } catch (error) { 
     res.status(500).json({ message: error.message });
     console.log(error.message);
   }

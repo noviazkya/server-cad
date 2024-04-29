@@ -55,7 +55,8 @@ export const createInformation = async (req, res) => {
     const file = req.files.inputFile;
     const fileSize = file.data.length;
     const ext = path.extname(file.name);
-    const fileName = file.md5 + ext;
+    const timestamp = new Date().getTime(); // Mendapatkan timestamp saat ini
+    const fileName = `${timestamp}_${file.md5}${ext}`; 
     const url = `${req.protocol}://${req.get("host")}/images/${fileName}`;
     const allowedTypes = [".png", ".jpg", ".jpeg"];
 
